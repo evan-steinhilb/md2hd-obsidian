@@ -1,0 +1,2757 @@
+/* md2hd — the application shell.
+
+   Tokens, resets and the shared atoms live in `styles/base.css`, which the
+   public site imports too. Everything below is the three-column app itself:
+   rail, stage, panel. The full-height ground is set here rather than there,
+   because a marketing page has to scroll.
+
+   The system this draws from is written down in `docs/design.md`. */
+
+@import './styles/base.css';
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Shell ------------------------------------------------------------------- */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  height: 100%;
+  /* The rail slides between its widths instead of teleporting. */
+  transition: grid-template-columns 0.2s var(--ease);
+}
+
+.shell[data-rail='collapsed'] {
+  /* Wide enough for the mark and the toggle side by side. */
+  --rail: 66px;
+}
+
+/* Rail -------------------------------------------------------------------- */
+
+/* The frame recedes: nav sits a half-step below the stage's chrome, so the
+   two 52px head bands read as neighbouring zones, not one slab. */
+.rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--grain), var(--surface-dim);
+  border-right: 1px solid var(--line-soft);
+}
+
+.rail-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 52px;
+  padding: 0 12px 0 14px;
+  flex: none;
+}
+
+/* The lockup is the way home. The link takes the row's flex so the wordmark
+   still fills it, and gives that up when only the mark is left to centre. */
+.brand-link {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+}
+
+.shell[data-rail='collapsed'] .brand-link {
+  flex: none;
+}
+
+/* The full lockup while there is room for it, the mark alone when there is not. */
+.brand {
+  flex: 1;
+  min-width: 0;
+  height: 17px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.brand-mark {
+  display: none;
+  flex: none;
+  height: 15px;
+}
+
+.rail-toggle {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 5px;
+  color: var(--ink-faint);
+  transition: 0.14s var(--ease);
+}
+
+.rail-toggle:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.rail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px 10px;
+  flex: none;
+}
+
+.rail-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 32px;
+  padding: 0 9px;
+  border-radius: 6px;
+  color: var(--ink-mute);
+  font-size: 13px;
+  text-align: left;
+  /* Labels clip rather than wrap while the rail is mid-slide. */
+  white-space: nowrap;
+  overflow: hidden;
+  transition: 0.14s var(--ease);
+}
+
+.rail-btn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.rail-btn svg {
+  flex: none;
+}
+
+.rail-btn.primary {
+  color: var(--ink);
+}
+
+.rail-btn.primary:hover {
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+}
+
+.rail-section {
+  padding: 12px 17px 6px;
+  flex: none;
+}
+
+.rail-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 12px;
+}
+
+.rail-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 34px;
+  padding: 0 6px 0 9px;
+  border-radius: 6px;
+  color: var(--ink-mute);
+  transition: 0.14s var(--ease);
+}
+
+.rail-item:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.rail-item[aria-current='true'] {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.rail-item[aria-current='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.rail-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  text-align: left;
+}
+
+.rail-item-kill {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: var(--ink-faint);
+  flex: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.14s var(--ease);
+}
+
+.rail-item:hover .rail-item-kill,
+.rail-item:focus-within .rail-item-kill {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.rail-item-kill:hover {
+  background: var(--surface-3);
+  color: var(--danger);
+}
+
+/* Workspace shelves --------------------------------------------------------
+   The rail's top level is workspaces now: every one a collapsible shelf, as
+   many open at once as the person leaves open. The one the canvas stands in
+   gets a quiet emphasis, not a different anatomy. */
+
+.rail-group {
+  margin-bottom: 2px;
+}
+
+.rail-group-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 6px 2px 2px;
+  border-radius: 6px;
+}
+
+.rail-group-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-align: left;
+  transition: 0.14s var(--ease);
+}
+
+.rail-group-name:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.rail-group[data-active] .rail-group-name {
+  color: var(--ink-mute);
+}
+
+.rail-group-name svg {
+  flex: none;
+  transition: transform 0.14s var(--ease);
+  transform: rotate(90deg);
+}
+
+.rail-group[data-shut] .rail-group-name svg {
+  transform: none;
+}
+
+.rail-group-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The shelf slides shut rather than vanishing: a grid row interpolating
+   between 1fr and 0fr is the platform's own way to animate to unknown height. */
+.rail-group-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.18s var(--ease);
+}
+
+.rail-group-body > div {
+  overflow: hidden;
+  min-height: 0;
+  visibility: visible;
+  transition: visibility 0s;
+}
+
+.rail-group[data-shut] .rail-group-body {
+  grid-template-rows: 0fr;
+}
+
+/* Delayed so the contents stay visible while the shelf is still closing —
+   and unfocusable once it has. */
+.rail-group[data-shut] .rail-group-body > div {
+  visibility: hidden;
+  transition: visibility 0s 0.18s;
+}
+
+/* Somewhere a dragged map can land. The tint answers during the hover, which
+   is the whole conversation a drop target gets to have. */
+.rail-group[data-drop],
+.rail-folder[data-drop] {
+  background: var(--accent-soft);
+  border-radius: 6px;
+}
+
+.rail-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 6px;
+}
+
+.rail-folder-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 6px;
+  color: var(--ink-mute);
+  font-size: 12.5px;
+  text-align: left;
+  transition: 0.14s var(--ease);
+}
+
+.rail-folder-name:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.rail-folder-name svg {
+  flex: none;
+  transition: transform 0.14s var(--ease);
+  transform: rotate(90deg);
+}
+
+.rail-folder[data-shut] .rail-folder-name svg {
+  transform: none;
+}
+
+.rail-folder-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-folder .rail-item {
+  padding-left: 24px;
+}
+
+/* The kebab: hidden until the row is entered, same bargain as the trash can. */
+
+.rail-menu {
+  position: relative;
+  flex: none;
+}
+
+.rail-menu summary {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  list-style: none;
+  opacity: 0;
+  transition: opacity 0.14s var(--ease);
+}
+
+.rail-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.rail-item:hover .rail-menu summary,
+.rail-item:focus-within .rail-menu summary,
+.rail-group-head:hover .rail-menu summary,
+.rail-folder-head:hover .rail-menu summary,
+.rail-menu[open] summary {
+  opacity: 1;
+}
+
+.rail-menu summary:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.rail-menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 2px);
+  z-index: 30;
+  min-width: 150px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow, 0 8px 24px rgb(0 0 0 / 0.18));
+  display: flex;
+  flex-direction: column;
+}
+
+.rail-menu-panel button,
+.rail-menu-panel a {
+  display: block;
+  width: 100%;
+  padding: 6px 9px;
+  border-radius: 5px;
+  color: var(--ink-mute);
+  font-size: 12.5px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: 0.14s var(--ease);
+}
+
+.rail-menu-panel button:hover,
+.rail-menu-panel a:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* The inline name row, standing where the button it replaces just stood. */
+
+.rail-name {
+  padding: 2px 8px;
+}
+
+.rail-name input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.rail-name input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Padded to the drawer strip's own arithmetic, so the two footers share one
+   band and one hairline height across the shell. */
+.rail-foot {
+  flex: none;
+  padding: 5px 8px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* The account row ---------------------------------------------------------- */
+
+/* One line, because the rail is 244px wide and this is not what anyone came
+   here to look at. Signed out it is a single link and nothing else. */
+.rail-cloud {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 9px 2px;
+}
+
+.rail-save {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Only the two states worth interrupting for take a colour. Saving and saved
+   are the normal course of events and read as metadata. */
+.rail-save[data-state='error'],
+.rail-save[data-state='conflict'] {
+  color: var(--danger);
+}
+
+.rail-save[data-state='offline'] {
+  color: var(--ink-mute);
+}
+
+.rail-account {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12.5px;
+}
+
+.rail-workspace {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-mute);
+}
+
+.rail-link {
+  flex: none;
+  font-size: 12px;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color 0.14s var(--ease);
+}
+
+.rail-link:hover {
+  color: var(--accent-bright);
+}
+
+.shell[data-rail='collapsed'] .brand,
+.shell[data-rail='collapsed'] .rail-btn span,
+.shell[data-rail='collapsed'] .rail-section,
+.shell[data-rail='collapsed'] .rail-item-name,
+.shell[data-rail='collapsed'] .rail-item-kill,
+.shell[data-rail='collapsed'] .rail-group-head,
+.shell[data-rail='collapsed'] .rail-folder-head,
+.shell[data-rail='collapsed'] .rail-name,
+.shell[data-rail='collapsed'] .rail-menu,
+.shell[data-rail='collapsed'] .rail-cloud {
+  display: none;
+}
+
+.shell[data-rail='collapsed'] .brand-mark {
+  display: block;
+}
+
+.shell[data-rail='collapsed'] .rail-head {
+  justify-content: center;
+  gap: 7px;
+  padding: 0 6px;
+}
+
+.shell[data-rail='collapsed'] .rail-btn,
+.shell[data-rail='collapsed'] .rail-item {
+  justify-content: center;
+  padding: 0;
+}
+
+/* Canvas ------------------------------------------------------------------ */
+
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--grain), var(--bg);
+}
+
+.canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.stage.dropping::after {
+  content: 'Drop markdown to import';
+  position: absolute;
+  inset: 12px;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  pointer-events: none;
+  animation: fade-in 0.16s var(--ease);
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__node {
+  cursor: default;
+}
+
+/* Cards sit above the links — a card is content, a line is wiring — and the
+   card you are reading lifts further still, clear of any neighbour it
+   happens to overlap. */
+.react-flow__node:hover,
+.react-flow__node.selected {
+  z-index: 6 !important;
+}
+
+/* Ports exist only so edges can pick a face; they are never dragged. */
+.react-flow__handle {
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.react-flow__controls {
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+}
+
+.react-flow__controls-button {
+  width: 28px;
+  height: 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-soft);
+  fill: var(--ink-mute);
+  transition: 0.14s var(--ease);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-2);
+  fill: var(--ink);
+}
+
+.react-flow__minimap {
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.react-flow__minimap-mask {
+  fill: color-mix(in srgb, var(--bg) 78%, transparent);
+}
+
+/* Toolbar ----------------------------------------------------------------- */
+
+/* Docked, not floating: it lines up with the rail header and owns its own
+   band, so nothing it holds ever covers the map. */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  height: 52px;
+  padding: 0 12px 0 14px;
+  background: var(--grain), var(--surface);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  transition: 0.14s var(--ease);
+}
+
+.search:hover {
+  border-color: var(--line-soft);
+}
+
+.search:focus-within {
+  border-color: var(--line);
+}
+
+.search input {
+  width: 196px;
+  background: none;
+  border: 0;
+  outline: 0;
+  font-size: 13px;
+  transition: width 0.2s var(--ease);
+}
+
+/* The field leans in when typing starts. */
+.search:focus-within input {
+  width: 240px;
+}
+
+.search input::placeholder {
+  color: var(--ink-faint);
+}
+
+.search kbd {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+.toolbar .divider {
+  width: 1px;
+  height: 20px;
+  background: var(--line-soft);
+  flex: none;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+
+.filters-label {
+  flex: none;
+  margin-right: 3px;
+}
+
+/* The layout cluster in the toolbar's right corner, beside fit: everything
+   that moves the ranks or the camera in one place. */
+.toolbar-layout {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+/* The strip is a 30px row and `.btn` is 33, which is the right height in a
+   dialog and three pixels of drift up here. Height belongs to the context, so
+   it is set here rather than on `.cta` — the same button is 33 in a sheet
+   footer, standing beside its siblings. */
+.toolbar .btn {
+  height: 30px;
+  flex: none;
+  padding: 0 13px;
+  font-size: 12.5px;
+}
+
+/* The one solid fill in the application: white on `--accent`. Twinned with
+   `.guest-cta` on a shared map, which is the same button doing the same job for
+   the other audience — one offers the map, the other offers the product, and a
+   reader who has met the second should recognise the first.
+
+   Reserved for the action a surface is actually for: publishing the link, or
+   buying the plan that publishes it. Everything near it stays an icon or an
+   outline. */
+.btn.cta {
+  gap: 6px;
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.btn.cta:hover {
+  border-color: transparent;
+  background: var(--accent-bright);
+  color: #fff;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 6px;
+  color: var(--ink-mute);
+  transition: 0.14s var(--ease);
+}
+
+.icon-btn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* Press feedback: the same knob everywhere, small enough to stay quiet. */
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.icon-btn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+}
+
+.stat {
+  position: absolute;
+  z-index: 5;
+  left: 14px;
+  bottom: 14px;
+  display: flex;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+/* Drawer ------------------------------------------------------------------- */
+
+/* Rests as a tab bar at the foot of the canvas, in the rail footer's own band:
+   Overview stands for the map surface, then a tab per type, select-to-focus.
+   In flow rather than floating, so it never covers the stat line or the
+   minimap. The focused surface expands out of this bar's top edge — the strip
+   itself never moves, whichever state the drawer is in. */
+.drawer {
+  /* Positioned so a tab's offsetLeft is measured from the strip itself —
+     the scroll-into-view math in Canvas.tsx depends on it. */
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  /* The rail-foot's own arithmetic: 5 + 32 + 5 of band + its hairline. */
+  height: 43px;
+  border-top: 1px solid var(--line-soft);
+  /* The frame's own step, mirroring the rail: the pane lifts off it. */
+  background: var(--grain), var(--surface-dim);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.drawer::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tabs take the pane's own voice: the mono eyebrow for the label, the same
+   type-coloured chevron its connection lists point with. */
+.drawer-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  padding: 0 13px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  white-space: nowrap;
+  transition: color 0.14s var(--ease);
+}
+
+.drawer-tab:hover {
+  color: var(--ink);
+}
+
+.drawer-tab[aria-current] {
+  color: var(--ink);
+}
+
+/* The indicator lies flush on the tab's top edge, pointing at the pane it
+   opens; it carries the type's own colour, the accent for Overview. */
+.drawer-tab[aria-current]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 13px;
+  right: 13px;
+  height: 2px;
+  background: var(--tab-color, var(--accent));
+}
+
+/* Overview holds the left edge while the type tabs scroll under it. */
+.drawer-tab.overview {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding: 0 14px;
+  font-weight: 700;
+  background: var(--grain), var(--surface-dim);
+  border-right: 1px solid var(--line-soft);
+}
+
+/* Hidden on the canvas — same voice as everywhere the type is named. */
+.drawer-tab[data-off] {
+  opacity: 0.48;
+  text-decoration: line-through;
+  text-decoration-color: var(--line-lift);
+}
+
+/* The drawer's own controls hold the right edge the way Overview holds the
+   left: the file path, the source toggle, and the way to put the pane away. */
+.drawer-end {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  margin-left: auto;
+  padding: 0 10px 0 14px;
+  background: var(--grain), var(--surface-dim);
+  border-left: 1px solid var(--line-soft);
+  /* Arrives with the pane rather than popping into the band. */
+  animation: fade-in 0.18s var(--ease);
+}
+
+/* The strip's expanded state. One fold carries the whole motion — the grid row
+   runs 0fr to 1fr — so the pane rises out of the strip and the canvas above
+   gives way in the same gesture. */
+.drawer-fold {
+  display: grid;
+  flex: none;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.24s var(--ease);
+}
+
+.drawer-fold[data-open] {
+  grid-template-rows: 1fr;
+}
+
+.drawer-fold-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Node -------------------------------------------------------------------- */
+
+/* Weight is carried by the stroke, not by a badge: heavier nodes hold more of
+   their type colour and pick up a faint halo; light ones recede into the grid. */
+.card {
+  --w-edge: 38%;
+  --w-glow: none;
+  --w-text: 88%;
+
+  position: relative;
+  width: 232px;
+  padding: 10px 12px 11px;
+  border: 1px solid color-mix(in srgb, var(--type-color) var(--w-edge), var(--line));
+  border-radius: var(--r);
+  background: var(--surface-2);
+  box-shadow: var(--w-glow);
+  transition:
+    border-color 0.16s var(--ease),
+    box-shadow 0.16s var(--ease),
+    background 0.16s var(--ease),
+    opacity 0.2s var(--ease);
+}
+
+.card.w5 {
+  --w-edge: 85%;
+  --w-glow: 0 0 24px -8px color-mix(in srgb, var(--type-color) 70%, transparent);
+  --w-text: 100%;
+}
+
+.card.w4 {
+  --w-edge: 58%;
+  --w-glow: 0 0 18px -11px color-mix(in srgb, var(--type-color) 60%, transparent);
+  --w-text: 95%;
+}
+
+.card.w2 {
+  --w-edge: 19%;
+  --w-text: 72%;
+}
+
+.card.w1 {
+  --w-edge: 8%;
+  --w-text: 56%;
+}
+
+/* Hover and selection move the same knob the weight classes do, so the stroke
+   has exactly one source of colour and these states can only ever strengthen
+   it. 88% clears every weight step, so hovering never dims a heavy node. */
+.card:hover {
+  --w-edge: 88%;
+  background: var(--surface-3);
+  box-shadow: 0 0 22px -9px color-mix(in srgb, var(--type-color) 65%, transparent);
+}
+
+/* Selection is announced by a ring, not by a hue. The stroke goes to the node's
+   own type colour at full strength and picks up a concentric halo in that same
+   colour — painting it brand blue would have erased the one thing the stroke is
+   for, which is telling you what the node is and what it connects to. */
+.card.selected {
+  --w-text: 100%;
+  --w-edge: 100%;
+  background: var(--surface-3);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--type-color) 24%, transparent),
+    0 0 30px -6px color-mix(in srgb, var(--type-color) 58%, transparent);
+}
+
+.card.ghost {
+  background: transparent;
+  border-style: dashed;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.card-type {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--type-color) var(--w-text), transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-degree {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  flex: none;
+}
+
+.card-title {
+  font-size: 13.5px;
+  font-weight: 550;
+  color: color-mix(in srgb, var(--ink) var(--w-text), transparent);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-sub {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 7px;
+  overflow: hidden;
+}
+
+.tag {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+/* Focus falloff: the map answers "what touches this?" without a legend. */
+.react-flow__node.hop1 .card {
+  --w-edge: 72%;
+}
+
+.react-flow__node.hop2 .card {
+  opacity: 0.58;
+}
+
+/* The third ring the degree dial seats: one more step away than the second. */
+.react-flow__node.hop3 .card {
+  opacity: 0.32;
+}
+
+.react-flow__node.hopfar .card {
+  opacity: 0.14;
+}
+
+.react-flow__node.nomatch .card {
+  opacity: 0.1;
+}
+
+/* Same rule as selection: a match keeps its own colour. Nothing is lost by it —
+   everything that did not match is already down at a tenth opacity, so the hits
+   are the only thing left standing and do not need a second signal. */
+.react-flow__node.hit .card {
+  --w-edge: 100%;
+  background: var(--surface-3);
+  box-shadow: 0 0 22px -10px color-mix(in srgb, var(--type-color) 60%, transparent);
+}
+
+/* Edge -------------------------------------------------------------------- */
+
+/* Links draw under the cards (the library's own order): at any density the
+   content wins over the wiring. What a link touches is stated at its ends —
+   the arrowhead and the label — so a line passing behind a card no longer
+   has to be painted across the card to avoid seeming to stop there. */
+
+.edge-casing {
+  fill: none;
+  stroke: color-mix(in srgb, var(--bg) 78%, transparent);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition: opacity 0.2s var(--ease);
+}
+
+.react-flow__edge.tr-far .edge-casing,
+.react-flow__edge.tr-aside .edge-casing {
+  opacity: 0.5;
+}
+
+/* At rest a link holds a trace of its source type's colour — 32% into the
+   edge ground, the same mix its arrowhead is tinted with in Canvas.tsx —
+   so the wiring reads as data without competing with the cards. */
+.react-flow__edge-path {
+  stroke: color-mix(in srgb, var(--from, var(--edge)) 32%, var(--edge));
+  stroke-width: 1.25;
+  transition:
+    stroke 0.18s var(--ease),
+    opacity 0.2s var(--ease);
+}
+
+/* A live link takes the colour of the node it leaves — the same colour its
+   label and badge carry, so the three read as one object. */
+.react-flow__edge.tr-out .react-flow__edge-path,
+.react-flow__edge.tr-in .react-flow__edge-path {
+  stroke: var(--from, var(--accent-bright));
+  stroke-width: 1.5;
+}
+
+.react-flow__edge.tr-far .react-flow__edge-path {
+  opacity: 0.14;
+}
+
+/* Neighbour-to-neighbour: how the focus's relations relate to each other.
+   A solid line at a deeper mix — clearly present, clearly quieter than the
+   links that touch the focus itself. */
+.react-flow__edge.tr-aside .react-flow__edge-path {
+  stroke: color-mix(in srgb, var(--from, var(--edge)) 58%, var(--edge));
+}
+
+/* Above the cards: a label that cannot find a gap must still be readable. */
+.react-flow__edgelabel-renderer {
+  z-index: 5;
+}
+
+.edge-label {
+  position: absolute;
+  padding: 1px 6px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  pointer-events: none;
+  transition: 0.18s var(--ease);
+  white-space: nowrap;
+}
+
+/* A live link is tinted by the node it leaves, so the chip says where it starts
+   without you having to trace the line back. */
+.edge-label.out,
+.edge-label.in {
+  border-color: var(--from, var(--accent-line));
+  color: var(--from, var(--accent-bright));
+}
+
+/* A compass badge outside the chip, aimed at the node it refers to. */
+.edge-chevron {
+  position: absolute;
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease);
+}
+
+.edge-chevron circle {
+  fill: var(--bg);
+  stroke: currentColor;
+  stroke-width: 1.1;
+}
+
+.edge-chevron path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.edge-label.far {
+  opacity: 0.12;
+}
+
+.edge-label.aside {
+  opacity: 0.45;
+}
+
+/* An implied link earns a label only when you are asking about it. */
+.edge-label.quiet {
+  opacity: 0;
+}
+
+.edge-label.quiet.out,
+.edge-label.quiet.in,
+.edge-label.quiet.aside {
+  opacity: 1;
+}
+
+.edge-label.quiet.aside {
+  opacity: 0.45;
+}
+
+/* Past the size anyone reads chips at rest (`DENSE` in Canvas.tsx), labels
+   wait to be asked: the lines carry the shape of the map, and the words
+   return on the links of whatever you hover, focus or search. */
+.dense .edge-label {
+  opacity: 0;
+}
+
+.dense .edge-label.out,
+.dense .edge-label.in {
+  opacity: 1;
+}
+
+.dense .edge-label.aside {
+  opacity: 0.45;
+}
+
+.dense .edge-label.far {
+  opacity: 0;
+}
+
+/* Drawer pane ------------------------------------------------------------- */
+
+/* Wide and shallow where the old rail was tall and narrow: a header band
+   carries the surface's name, and the body below splits into columns —
+   detail or config on the left, itemised regions taking the rest — with
+   hairlines keeping them honest. Height is the reader's to set: the top
+   edge drags, and `--pane-h` remembers where they left it. */
+.drawer-pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--pane-h, min(28vh, 280px));
+  min-height: 140px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--grain), var(--surface);
+}
+
+/* Folded to the title band: the header's chevron put the details away. */
+.drawer-pane[data-folded] {
+  height: auto;
+  min-height: 0;
+}
+
+.drawer-pane[data-folded] .pane-body {
+  display: none;
+}
+
+.drawer-pane[data-folded] .pane-head {
+  border-bottom: 0;
+}
+
+/* The drag handle rides the pane's top hairline; the pill only surfaces on
+   hover, so at rest the edge stays a hairline like every other edge. */
+.pane-grip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 9px;
+  z-index: 6;
+  cursor: row-resize;
+}
+
+.pane-grip::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 44px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: var(--line-lift);
+  opacity: 0;
+  transition: opacity 0.14s var(--ease);
+}
+
+.pane-grip:hover::after,
+.pane-grip[data-dragging]::after {
+  opacity: 1;
+}
+
+/* The pane's own header: the surface's name resting in one band, the body
+   left to its detail. */
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  /* The strip's own 43px band: folded, the two stack as twins. */
+  height: 43px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line-soft);
+  /* The band that names the surface lifts a half-step off the body. */
+  background: var(--grain), var(--surface-lift);
+}
+
+/* Details in, details away. The chevron holds the header's right edge and
+   points where clicking will take the pane: up to expand, down to fold. It
+   keeps the icon-btn standard, and the negative margin seats its centre on
+   the same vertical as the strip's close control below. */
+.pane-fold-btn {
+  margin-right: -10px;
+  color: var(--ink-faint);
+}
+
+.pane-fold-btn svg {
+  transition: transform 0.16s var(--ease);
+}
+
+.pane-fold-btn[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* Text and Code share one cell; the pressed half carries the highlight. The
+   cell stands 30px with its border — the icon-btn standard the close control
+   and the fold chevron keep. */
+.seg {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.seg .icon-btn {
+  width: 30px;
+  height: 28px;
+  border-radius: 0;
+}
+
+.seg .icon-btn + .icon-btn {
+  border-left: 1px solid var(--line-soft);
+}
+
+.pane-title {
+  flex: none;
+  max-width: 40%;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pane-sub {
+  min-width: 0;
+  flex-shrink: 1;
+  font-size: 12px;
+  color: var(--ink-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pane-head-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  margin-left: auto;
+}
+
+.pane-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* A node's detail: tags, description, fields, notes — the header already
+   said who it is. */
+.pane-detail {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: clamp(280px, 34%, 480px);
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--line-soft);
+}
+
+.pane-detail .pane-scroll {
+  padding-top: 14px;
+}
+
+.pane-detail .pane-scroll > * + * {
+  margin-top: 14px;
+}
+
+/* Code view: the whole body becomes the editor on the node's file. */
+.pane-editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+/* The upper surfaces' config rows, standing where a node keeps its detail. */
+.pane-config {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: clamp(260px, 30%, 420px);
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--line-soft);
+}
+
+.pane-config .pane-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* Seated in the head band beside the title, so it holds one row and clips
+   rather than wraps — the band is a fixed 43px and must not grow. */
+.pane-head-tags {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pane-desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-mute);
+}
+
+.pane-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* To and From stand side by side, a hairline between them. */
+.pane-list + .pane-list {
+  border-left: 1px solid var(--line-soft);
+}
+
+/* A list with no head of its own still clears the header band. */
+.pane-list.bare .pane-scroll {
+  padding-top: 12px;
+}
+
+/* Each region's own scroll, seated under its head: the bar starts where the
+   content does instead of running up into the band, and the region neither
+   bounces at its ends nor hands its leftover scroll to the pane. */
+.pane-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  padding: 10px 20px 24px;
+  scrollbar-width: thin;
+}
+
+.pane-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* The head stands over its region's scroll rather than riding inside it.
+   The break runs under the whole header, never through it. Its lift is half
+   the pane header's own, so the two kinds of band read as kin, not twins. */
+.pane-list-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 15px 20px 9px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--grain), color-mix(in srgb, var(--surface-lift) 55%, var(--surface));
+}
+
+.pane-count {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+/* The width works for the list: children become cells instead of full-width
+   stripes, and the resting hairline is what makes them read as cells. */
+.pane-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px 10px;
+}
+
+.pane-grid .rel-item {
+  border-color: var(--line-soft);
+}
+
+.pane-grid .rel-item:hover {
+  border-color: var(--line);
+}
+
+/* To and From read as an indented outline: no cell chrome, no strokes, a
+   type-coloured chevron pointing the way instead of a dot. */
+.rel-group .pane-grid {
+  padding-left: 12px;
+  gap: 1px 10px;
+}
+
+.rel-group .rel-item {
+  border: 0;
+  padding: 5px 8px 5px 4px;
+}
+
+.rel-chev {
+  display: flex;
+  flex: none;
+}
+
+/* The degree dial holding the head's right edge: how far this direction runs
+   on the canvas. A quiet inset track; the chosen stop is a neutral filled
+   step, not an accent — the dial is furniture, and the canvas answers it.
+   The negative block margin keeps the head's height exactly what the eyebrow
+   line already set. */
+.dial {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  /* Roomy enough to read at the eyebrow's own size; the negative block
+     margin hands the extra height to the head's padding instead of growing
+     the band. */
+  margin: -4px 0 -4px auto;
+  padding: 2px;
+  flex: none;
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.dial button {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 16px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  transition: 0.14s var(--ease);
+}
+
+/* The X puts the direction away rather than selecting a fourth ring, so it
+   takes only the width its glyph needs instead of a stop's full measure. */
+.dial button.dial-off {
+  min-width: 19px;
+  padding: 0 4px;
+}
+
+.dial button:hover {
+  color: var(--ink);
+}
+
+.dial button[aria-pressed='true'] {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+/* A direction switched off keeps its list, muted to match the canvas. */
+.pane-list[data-off] > :not(.pane-list-head) {
+  opacity: 0.45;
+}
+
+.source-note {
+  flex: none;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+
+/* Metadata: whatever extra keys the author put in the frontmatter. */
+.fields {
+  margin: 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.field dt {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.field dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.field-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.field-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-bright);
+  text-decoration: none;
+}
+
+.field-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Folds: connections open by default, source tucked away. */
+.fold {
+  margin-top: 22px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.fold > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 0 10px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--ink-mute);
+  transition: color 0.14s var(--ease);
+}
+
+.fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.fold > summary:hover {
+  color: var(--ink);
+}
+
+.fold > summary::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4px solid currentColor;
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+  transition: transform 0.16s var(--ease);
+}
+
+.fold[open] > summary {
+  color: var(--ink);
+}
+
+.fold[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.fold-count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prose {
+  font-size: 14px;
+  line-height: 1.68;
+  color: var(--ink-soft);
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  color: var(--ink);
+  margin: 22px 0 8px;
+}
+
+.prose h1 {
+  font-size: 15px;
+}
+.prose h2 {
+  font-size: 13.5px;
+}
+.prose h3 {
+  font-size: 12.5px;
+  color: var(--ink-mute);
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote {
+  margin: 0 0 12px;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 20px;
+}
+
+.prose li {
+  margin-bottom: 4px;
+}
+
+.prose li::marker {
+  color: var(--ink-faint);
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prose a {
+  color: var(--accent-bright);
+  text-decoration-color: color-mix(in srgb, var(--accent-bright) 40%, transparent);
+  text-underline-offset: 2px;
+}
+
+.prose code {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+}
+
+.prose pre {
+  padding: 11px 13px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
+  overflow-x: auto;
+}
+
+.prose pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.prose blockquote {
+  padding-left: 13px;
+  border-left: 2px solid var(--line);
+  color: var(--ink-mute);
+  font-style: italic;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  margin: 20px 0;
+}
+
+.prose table {
+  border-collapse: collapse;
+  font-size: 13px;
+  width: 100%;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid var(--line-soft);
+  padding: 5px 9px;
+  text-align: left;
+}
+
+.prose th {
+  background: var(--surface-2);
+  font-weight: 550;
+}
+
+.rel-group {
+  margin-bottom: 18px;
+}
+
+.rel-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+/* The same relation as the other node would put it — kept beside the label,
+   because across the pane's full width a right-pinned hint floats unattached. */
+.rel-mirror {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.rel-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  text-align: left;
+  transition: 0.14s var(--ease);
+}
+
+.rel-item:hover {
+  background: var(--surface-2);
+  border-color: var(--line-soft);
+}
+
+.rel-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.rel-item-type {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.raw {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 13px;
+  resize: none;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.65;
+  outline: 0;
+  tab-size: 2;
+}
+
+.raw:focus {
+  border-color: var(--line);
+}
+
+/* Empty state ------------------------------------------------------------- */
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+.empty-inner {
+  max-width: 460px;
+  text-align: center;
+}
+
+.empty-mark {
+  height: 30px;
+}
+
+.empty h1 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  margin: 18px 0 8px;
+}
+
+.empty p {
+  color: var(--ink-mute);
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 33px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 13px;
+  color: var(--ink-mute);
+  transition: 0.14s var(--ease);
+}
+
+.btn:hover {
+  border-color: var(--line-lift);
+  color: var(--ink);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn.accent {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+}
+
+.btn.accent:hover {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+/* Syntax sheet ------------------------------------------------------------ */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(3px);
+  animation: fade-in 0.18s var(--ease);
+}
+
+.sheet {
+  width: min(720px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+  /* Rises into place under the scrim's fade; closing stays immediate. */
+  animation: sheet-in 0.22s var(--ease);
+}
+
+.sheet-head .brand-mark {
+  display: block;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--line-soft);
+  flex: none;
+  /* Same grammar as the pane: the naming band lifts off the body. */
+  background: var(--grain), var(--surface-lift);
+}
+
+.sheet-title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.sheet-body {
+  overflow-y: auto;
+  padding: 20px 22px 26px;
+}
+
+/* Import ------------------------------------------------------------------- */
+
+/* Two ways into one map: files, and the paste that markdown deserves. Neither
+   is a mode — whatever is queued and whatever is pasted parse together. */
+
+.import {
+  width: min(620px, 100%);
+}
+
+.import-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 22px;
+}
+
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 26px 20px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r);
+  background: var(--n-0);
+  color: var(--ink-faint);
+  text-align: center;
+  transition: 0.16s var(--ease);
+}
+
+.drop.is-over {
+  border-color: var(--accent);
+  border-style: dashed;
+  background: color-mix(in srgb, var(--accent) 7%, var(--n-0));
+  color: var(--accent-bright);
+}
+
+.drop p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-mute);
+}
+
+.drop-note {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+/* A button that has to read as a link, because it sits mid-sentence. */
+.link {
+  padding: 0;
+  color: var(--accent-bright);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent-bright) 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  text-decoration-color: var(--accent-bright);
+}
+
+.import-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0 -4px;
+}
+
+.import-label span {
+  color: var(--ink-faint);
+}
+
+/* The rule runs to the edges and the words sit in it, so "or" reads as a seam
+   between two routes rather than a heading over the second one. */
+.import-or {
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.import-or::before,
+.import-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+.queue {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.queue li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 11px;
+  height: 34px;
+  background: var(--surface-2);
+}
+
+.queue li + li {
+  border-top: 1px solid var(--line-soft);
+}
+
+.queue-path {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-size {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  flex: none;
+}
+
+.queue-kill {
+  display: flex;
+  padding: 5px;
+  border-radius: 4px;
+  color: var(--ink-faint);
+  flex: none;
+  transition: 0.14s var(--ease);
+}
+
+.queue-kill:hover {
+  background: var(--surface-3);
+  color: var(--danger);
+}
+
+.paste {
+  width: 100%;
+  min-height: 168px;
+  resize: vertical;
+  padding: 12px 13px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r);
+  background: var(--n-0);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.62;
+  color: var(--ink-soft);
+  tab-size: 2;
+}
+
+.paste::placeholder {
+  color: var(--n-6);
+}
+
+.paste:focus-visible {
+  outline: none;
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.import-warn {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.sheet-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+  flex-wrap: wrap;
+  padding: 13px 18px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--grain), var(--surface-lift);
+}
+
+.import-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.import-name input {
+  width: 190px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  background: var(--n-0);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.import-name input:focus-visible {
+  outline: none;
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.import-name input:disabled {
+  opacity: 0.45;
+}
+
+.import-count {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+.import-count strong {
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.import-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn.accent:disabled:hover {
+  background: var(--accent-soft);
+}
+
+.import-warn-foot {
+  width: 100%;
+  margin-top: -2px;
+}
+
+/* Share -------------------------------------------------------------------- */
+
+/* Narrower than the import sheet: this one asks four questions, and three of
+   them are optional. The atoms below are twinned with `styles/account.css` —
+   the app cannot import it without taking the whole settings shell with it. */
+
+.share {
+  width: min(520px, 100%);
+}
+
+.share-body {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding-bottom: 20px;
+}
+
+/* Before there is a link there is nothing to align to, so the state centres on
+   its own action: glyph, what it does, and the button that does it, stacked on
+   one axis. Once a link exists the URL is the subject and everything goes back
+   to the left margin, because a string you are meant to read and copy should
+   start where every other line starts. */
+.share-centre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px 6px;
+  text-align: center;
+}
+
+.share-glyph {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 2px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+}
+
+.share-centre h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.share-centre p {
+  margin: 0;
+  max-width: 40ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.share-centre .btn {
+  margin-top: 4px;
+}
+
+.share-link {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.share-said {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-faint);
+  text-wrap: pretty;
+}
+
+/* The way out of a read-only link: a sentence and a chevron, and nothing to
+   fill in. The whole point of it being a step rather than a section is that this
+   costs a glance, so it may not cost a decision. */
+.share-next {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r);
+  background: var(--n-0);
+  text-align: left;
+  color: var(--ink-soft);
+  transition: 0.14s var(--ease);
+}
+
+.share-next:hover {
+  border-color: var(--line-lift);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.share-next span {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.share-next strong {
+  font-weight: 550;
+  color: var(--ink);
+}
+
+.share-next svg {
+  flex: none;
+  color: var(--ink-faint);
+}
+
+.share-next:hover svg {
+  color: var(--accent-bright);
+}
+
+/* Step two. The chevron that led here, turned around. */
+.share-back svg {
+  transform: rotate(180deg);
+}
+
+.share-step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.share-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.share-field > span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-mute);
+}
+
+.share-field input,
+.share-field select {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--n-1);
+  font-size: 13px;
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+.share-field input::placeholder {
+  color: var(--ink-faint);
+}
+
+.share-field input:focus-visible,
+.share-field select:focus-visible {
+  outline: none;
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* There is no success colour in this system and this does not need one — the
+   sentence is the confirmation, and a green would be the only green here. */
+.share-sent {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.share-sent strong {
+  font-weight: 550;
+  color: var(--ink);
+}
+
+/* An inline copyable string. The field is real and selectable, because the
+   copy button is a convenience and not the only way to get the link out. */
+.copy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--n-0);
+}
+
+.copy input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: none;
+  outline: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-mute);
+  text-overflow: ellipsis;
+}
+
+.share-views {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.share-revoke {
+  color: var(--danger);
+  text-decoration-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.share-revoke:hover {
+  text-decoration-color: var(--danger);
+}
+
+/* Bars --------------------------------------------------------------------- */
+
+/* Stacked along the bottom of the stage rather than floated over the canvas.
+   Each one says something about the map on screen, and none of them is worth
+   covering it up for — the same reasoning that anchors the panel's dock. */
+.bar {
+  /* Positioned only so it wins against `.empty`, which is absolute and inset to
+     the whole stage: a positioned element paints over a static one whatever the
+     document order says, and a bar you cannot click is worse than no bar. */
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  min-height: 42px;
+  padding: 7px 10px 7px 14px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--grain), var(--surface);
+  font-size: 13px;
+}
+
+.bar-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-soft);
+}
+
+.bar-note {
+  color: var(--ink-faint);
+}
+
+.bar .btn {
+  flex: none;
+  height: 28px;
+  padding: 0 11px;
+  font-size: 12.5px;
+}
+
+.bar .link {
+  flex: none;
+  font-size: 12.5px;
+}
+
+/* Breadcrumbs -------------------------------------------------------------- */
+
+/* Config rows -------------------------------------------------------------- */
+
+/* A 62px mono label and a wrap of chips; the upper surfaces stack these in
+   their config column. */
+.dock-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.dock-label {
+  flex: none;
+  width: 62px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pane-config .chip {
+  height: 22px;
+  gap: 5px;
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* Hidden on the canvas, wherever the type is named. */
+.chip[data-off],
+.rel-item[data-off] {
+  opacity: 0.48;
+}
+
+.chip[data-off] {
+  text-decoration: line-through;
+  text-decoration-color: var(--line-lift);
+}
+
+/* Itemised children -------------------------------------------------------- */
+
+.rel-item.stacked {
+  align-items: flex-start;
+  padding-top: 8px;
+  padding-bottom: 9px;
+}
+
+.rel-item.stacked .swatch,
+.rel-item.stacked .rel-item-type {
+  margin-top: 6px;
+}
+
+.rel-item.stacked .rel-chev {
+  margin-top: 3px;
+}
+
+.rel-item-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--ink-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tags are metadata, not a second subtitle — they take the mono voice the rest
+   of the app gives to metadata so the two lines never read as one paragraph. */
+.rel-item-tags {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The map's own surface, reached from the toolbar strip. */
+.filters-home {
+  flex: none;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--ink-mute);
+  white-space: nowrap;
+  transition: 0.14s var(--ease);
+}
+
+.filters-home:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.filters-home[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+}
+
+/* Entrances. Exits stay immediate — putting something away should feel done,
+   not choreographed. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 66px minmax(0, 1fr);
+  }
+  .shell .brand,
+  .shell .rail-btn span,
+  .shell .rail-section,
+  .shell .rail-group-head,
+  .shell .rail-folder-head,
+  .shell .rail-name,
+  .shell .rail-menu,
+  .shell .rail-item-name {
+    display: none;
+  }
+  .shell .brand-mark {
+    display: block;
+  }
+  .shell .rail-head {
+    justify-content: center;
+    gap: 7px;
+    padding: 0 6px;
+  }
+}
+
+/* Too narrow for columns: the body becomes one scroll, detail first, the
+   hairlines between regions turned horizontal. */
+@media (max-width: 640px) {
+  .drawer-pane {
+    height: var(--pane-h, min(46vh, 380px));
+  }
+  .pane-body {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .pane-detail,
+  .pane-config,
+  .pane-list {
+    flex: none;
+    width: auto;
+    overflow: visible;
+    border-right: 0;
+  }
+  .pane-scroll {
+    flex: none;
+    overflow: visible;
+  }
+  .pane-detail,
+  .pane-config {
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .pane-list + .pane-list {
+    border-left: 0;
+    border-top: 1px solid var(--line-soft);
+  }
+}

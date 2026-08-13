@@ -1,0 +1,14 @@
+/* Everything the embedded stage needs, gathered for one shadow-root sheet. */
+@import '@xyflow/react/dist/style.css';
+@import './src/theme.css';
+
+/* What the embed pages add inline: no rail, the stage is the whole frame. */
+:host {
+  display: block;
+  height: 100%;
+}
+
+.shell[data-share] {
+  height: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}

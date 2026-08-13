@@ -1,0 +1,247 @@
+/* md2hd — a graphite shell, and the logo blue reserved for state.
+   Hairline strokes carry structure; colour is reserved for type and for state.
+
+   This file is the ground both surfaces stand on: the app imports it through
+   `theme.css`, the public site through its layout. Anything here has to be
+   true of a scrolling marketing page and of a full-height canvas alike, so the
+   shell itself lives next door in `theme.css` and the site's own vocabulary
+   in `styles/site.css`. */
+
+:root {
+  /* The ground is one ordered ramp, darkest to lightest. Every shell token below
+     is a step on it, so contrast between any two is legible from their indices.
+     Saturation stays under 9% — this is grey, not night — and the hue cools as
+     it deepens, which keeps the darks from going flat and the type from going
+     blue. Nothing chromatic lives here; colour belongs to the graph. */
+  --n-0: hsl(228 9% 7.5%); /* the well — canvas, insets, code blocks */
+  --n-1: hsl(227 8% 11%); /* chrome — rail, toolbar, panel */
+  --n-2: hsl(226 8% 14.5%); /* raised — cards, inputs, chips */
+  --n-3: hsl(225 7% 17.5%); /* hairline between two chrome surfaces */
+  --n-4: hsl(224 7% 21%); /* hover, pressed */
+  --n-5: hsl(223 6% 26%); /* hairline that has to hold its own */
+  --n-6: hsl(222 6% 34%); /* the same hairline, lifted on hover */
+  --n-7: hsl(220 5% 56%); /* labels, counts, metadata — held at AA on a card */
+  --n-8: hsl(219 5% 66%); /* secondary copy */
+  --n-9: hsl(217 6% 83%); /* long-form body copy */
+  --n-10: hsl(215 10% 95%); /* headings, active state, everything primary */
+
+  --bg: var(--n-0);
+  --surface: var(--n-1);
+  --surface-2: var(--n-2);
+  --surface-3: var(--n-4);
+
+  /* Two half-steps, straddling the chrome step. The frame that holds the work
+     (rail, strip) recedes to the dim one; the bands that name things (pane
+     header, column heads, a sheet's head and foot) lift to the other. Chrome
+     stops being one flat value without any zone leaving the ramp's ladder. */
+  --surface-dim: hsl(228 8% 9.25%); /* between the well and chrome */
+  --surface-lift: hsl(226 8% 12.75%); /* between chrome and raised */
+  --line-soft: var(--n-3);
+  --line: var(--n-5);
+  --line-lift: var(--n-6);
+  --ink-faint: var(--n-7);
+  --ink-mute: var(--n-8);
+  --ink-soft: var(--n-9);
+  --ink: var(--n-10);
+
+  /* A grain film over every surface, so the greys read as material rather than
+     as fill. It sits at the threshold of visible — that is the whole point. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='.055'/%3E%3C/svg%3E");
+
+  /* Shadows carry the ground's hue, not pure black — black smudges on grey. */
+  --shadow-1: 0 6px 20px rgba(8, 9, 12, 0.5);
+  --shadow-2: 0 24px 70px rgba(8, 9, 12, 0.62);
+
+  /* The logo blue itself carries state; the lifted step carries text. */
+  --accent: #0071f9;
+  --accent-bright: #4d9bff;
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 55%, transparent);
+  --accent-glow: color-mix(in srgb, var(--accent) 62%, transparent);
+
+  --danger: #ee6a81;
+
+  /* The ground a link's colour is mixed toward — links are data, not chrome,
+     so at rest each holds a trace of its source type's hue over this base.
+     Twin: `EDGE` in src/lib/palette.ts. */
+  --edge: hsl(213 27% 23%);
+
+  --sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --rail: 244px;
+  --r: 7px;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* The full-height ground belongs to the app; a marketing page has to scroll. */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 9px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-lift);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Shared atoms ------------------------------------------------------------ */
+
+/* The button, shared by every surface.
+
+   It lives here rather than in `site.css` because only `Marketing.astro` and the
+   OG card import that file, and a sign-in form whose submit renders as bare text
+   is not a small bug. Everything that draws a button loads `base.css`; this is
+   the only file that is true of — which is also why the canvas is allowed to
+   share `.btn` and `.chip` with it, and shares nothing with `site.css`. */
+
+/* The quiet line under a heading. Same reason as the button: `Account.astro`
+   sets it on every settings sub-heading, and the account pages do not load
+   `site.css`. */
+
+.note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: 0.16s var(--ease);
+}
+
+.btn:hover {
+  border-color: var(--line-lift);
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.btn-accent {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-accent:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, #fff 12%, var(--accent));
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.btn-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-mute);
+  padding-inline: 12px;
+}
+
+.btn-quiet:hover {
+  border-color: var(--line-soft);
+  background: var(--surface-2);
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 0 13px;
+  font-size: 13px;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--ink-mute);
+  white-space: nowrap;
+  transition: 0.14s var(--ease);
+}
+
+button.chip:hover {
+  border-color: var(--line-lift);
+  color: var(--ink);
+}
+
+button.chip[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--chip-color, var(--accent)) 55%, transparent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--chip-color, var(--accent)) 12%, var(--surface-2));
+}
+
+.swatch {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  flex: none;
+}

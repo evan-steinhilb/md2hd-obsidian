@@ -1,0 +1,30 @@
+{
+  "name": "md2hd-obsidian",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Obsidian plugin — open a note or folder as an md2hd map.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evan-steinhilb/md2hd-obsidian.git"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node smoke.mjs",
+    "sync": "node scripts/sync.mjs"
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "^1.1.4",
+    "@xyflow/react": "^12.3.5",
+    "js-yaml": "^4.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "obsidian": "^1.7.2"
+  }
+}
