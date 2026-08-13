@@ -1,7 +1,7 @@
 {
   "name": "md2hd-obsidian",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Obsidian plugin — open a note or folder as an md2hd map.",
   "type": "module",
   "license": "MIT",
