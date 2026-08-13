@@ -37,3 +37,11 @@ for (const f of FILES) {
   cpSync(join(src, f), join(out, f))
   console.log(`  src/${f}`)
 }
+
+// The agent skill rides along too. The package's copy is the standalone,
+// shippable spec — the monorepo's .agents/ variant is repo-internal.
+cpSync(
+  join(here, '..', '..', 'package', 'skills', 'writing-md2hd-maps', 'SKILL.md'),
+  join(out, 'skill.md'),
+)
+console.log('  src/skill.md')

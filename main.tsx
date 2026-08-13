@@ -7,11 +7,12 @@
  * the CLI's shape — folder-name-prefixed paths — and the vault's own change
  * events stand in for the CLI's refresh-the-tab.
  */
-import { ItemView, Plugin, TFile, TFolder, type WorkspaceLeaf } from 'obsidian'
+import { ItemView, Notice, Plugin, TFile, TFolder, type WorkspaceLeaf } from 'obsidian'
 import { createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import EmbedMap from './src/ui/EmbedMap'
 import css from './.gen/css.js'
+import skill from './.gen/skill.js'
 
 const VIEW = 'md2hd-map'
 // Matches the CLI and the app's folder import.
@@ -133,6 +134,31 @@ export default class Md2hdPlugin extends Plugin {
       name: 'Map the whole vault',
       callback: () => void this.open(''),
     })
+
+    this.addCommand({
+      id: 'install-agent-skill',
+      name: 'Install the map-writing skill for coding agents',
+      callback: () => void this.installSkill(),
+    })
+  }
+
+  /**
+   * Writes the bundled writing-md2hd-maps skill into the vault, once per
+   * convention a coding agent might read: .agents/skills/ (the cross-agent
+   * home) and .claude/skills/ (Claude Code). Overwrites on rerun, so the
+   * vault's copy tracks the installed plugin version.
+   */
+  private async installSkill() {
+    const adapter = this.app.vault.adapter
+    for (const home of ['.agents', '.claude']) {
+      let dir = ''
+      for (const part of [home, 'skills', 'writing-md2hd-maps']) {
+        dir = dir ? `${dir}/${part}` : part
+        if (!(await adapter.exists(dir))) await adapter.mkdir(dir)
+      }
+      await adapter.write(`${dir}/SKILL.md`, skill)
+    }
+    new Notice('writing-md2hd-maps installed to .agents/skills/ and .claude/skills/')
   }
 
   private async open(target: string) {

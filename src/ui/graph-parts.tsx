@@ -6,8 +6,10 @@ import {
   Position,
   getBezierPath,
   type EdgeProps,
+  type NodeHandle,
   type NodeProps,
 } from '@xyflow/react'
+import { NODE_W } from '../lib/layout'
 import type { MdNode } from '../lib/parse'
 
 export type CardData = {
@@ -58,6 +60,38 @@ const SIDES = [
   ['top', Position.Top],
   ['bottom', Position.Bottom],
 ] as const
+
+/**
+ * Where the ports above sit on a card `h` tall, told to React Flow rather than
+ * left for it to measure.
+ *
+ * Measuring is the default and it costs a DOM round trip: until the ports have
+ * been read off the page, every edge that ends on the card declines to draw.
+ * That is a frame of missing lines each time a card arrives — and React Flow
+ * throws a card's measured ports away the moment it is hidden, which the ego
+ * view does to everything outside the focus's neighbourhood, so cards arrive
+ * constantly. Stating the geometry instead makes the lines immediate and keeps
+ * them through any amount of hiding and showing.
+ *
+ * These are the same numbers the measurement returns: the ports render 1px
+ * square, inset 1px from their face. If the card's handles move, move these.
+ */
+export const cardPorts = (h: number): NodeHandle[] =>
+  SIDES.flatMap(([name, position]) => {
+    const x =
+      position === Position.Left
+        ? 0.5
+        : position === Position.Right
+          ? NODE_W - 1.5
+          : NODE_W / 2 - 0.5
+    const y =
+      position === Position.Top ? 0.5 : position === Position.Bottom ? h - 1.5 : h / 2 - 0.5
+    const port = { position, x, y, width: 1, height: 1 }
+    return [
+      { ...port, id: `t-${name}`, type: 'target' as const },
+      { ...port, id: `s-${name}`, type: 'source' as const },
+    ]
+  })
 
 /** Every card's box in flow coordinates, so a label can dodge them. */
 export type Box = { x: number; y: number; w: number; h: number }

@@ -10,12 +10,11 @@ import {
   applyNodeChanges,
   useNodesInitialized,
   useReactFlow,
-  useStoreApi,
   type Edge,
   type Node,
   type NodeChange,
 } from '@xyflow/react'
-import { CardBoxes, CardNode, RelEdge, type Box, type CardData } from './graph-parts'
+import { CardBoxes, CardNode, RelEdge, cardPorts, type Box, type CardData } from './graph-parts'
 import { ChevRight, Close, Expand, Ranks, RanksDown, Search, Shrink, Target } from './icons'
 import { Pane, type Focus, type LinkShow } from './Detail'
 import { NODE_H, NODE_W, autoLayout, egoLayout, hops } from '../lib/layout'
@@ -442,7 +441,6 @@ function Canvas({
   const [boxes, setBoxes] = useState<Box[]>([])
   const [hovered, setHovered] = useState<string | null>(null)
   const { fitView } = useReactFlow()
-  const store = useStoreApi()
 
   const selected = focus?.kind === 'node' ? focus.id : null
   const focusType = focus?.kind === 'type' ? focus.type : null
@@ -456,14 +454,14 @@ function Canvas({
   posRef.current = positions
 
   // Read-only, same reason. The layout effect below rebuilds every node object
-  // from the graph, and a node handed to React Flow without `measured` is a
-  // node it has to measure again: it throws away that node's handle bounds, so
-  // every edge touching it stops drawing, and it drops the node from the fit,
-  // so `fitView` has nothing to frame and the camera stays where it was while
-  // the new layout lands off screen. The heights come back on the next DOM
-  // round trip — which a throttled or offscreen frame never gets, leaving the
-  // map stranded without its lines. So the rebuild carries the last measure
-  // forward. Nodes never measured still arrive undefined and get observed.
+  // from the graph, and React Flow will not draw an edge to a node it has no
+  // size for: a card whose `measured` came back undefined counts as un-arrived,
+  // ports or no ports, and every line touching it goes out. It also drops such
+  // a card from the fit, so `fitView` frames the cards it can see and misses
+  // the one just opened. Both repair on the next DOM round trip — which a
+  // throttled or offscreen frame never gets — so the rebuild carries the last
+  // measure forward instead. A card never measured still arrives undefined,
+  // which is what gets it observed in the first place.
   const nodesRef = useRef<Node[]>([])
   nodesRef.current = nodes
 
@@ -516,6 +514,7 @@ function Canvas({
       type: 'card',
       position: egoOn?.get(n.id) ?? stored[n.id] ?? { x: 0, y: 0 },
       measured: was.get(n.id),
+      handles: cardPorts(heightsRef.current.get(n.id) ?? NODE_H),
       data: {
         node: n,
         color: graph.config.types[n.type]?.color ?? UNRESOLVED,
@@ -637,32 +636,6 @@ function Canvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graph, layoutNonce, egoOn, remeasured])
 
-  // Give back the link ports of any card that is on screen without them.
-  //
-  // React Flow discards a card's handle bounds the moment that card is hidden,
-  // and the ego view hides everything outside the focus's neighbourhood. So the
-  // cards returning to a widening cast are in the DOM with no ports, and an
-  // edge whose end has no port declines to draw at all. It repairs itself when
-  // the resize observer next reports — one frame later, or never in a frame the
-  // browser is throttling — and the commit in between is painted meanwhile.
-  // That paint is the blink of missing lines.
-  //
-  // A layout effect lands after the commit and before the paint, so measuring
-  // here means the frame that reaches the screen already has its ports. Reading
-  // the lookup first keeps it cheap: emphasis rewrites every node object on
-  // hover, and in the ordinary case every card on screen already has its ports,
-  // so this walks the lookup and touches no DOM at all.
-  useLayoutEffect(() => {
-    const { domNode, nodeLookup, updateNodeInternals } = store.getState()
-    const updates = new Map()
-    for (const [id, node] of nodeLookup) {
-      if (node.internals.handleBounds || node.hidden) continue
-      const el = domNode?.querySelector<HTMLElement>(`.react-flow__node[data-id="${CSS.escape(id)}"]`)
-      if (el) updates.set(id, { id, nodeElement: el, force: true })
-    }
-    if (updates.size) updateNodeInternals(updates)
-  }, [nodes, store])
-
   // A card can only be measured once it is on screen, so the first placement
   // runs on the fallback height and this re-runs it on the real ones. It
   // settles because the heights it reads are the DOM's own and do not change
@@ -680,34 +653,11 @@ function Canvas({
   const roster = graph.nodes.map((n) => n.id).join('|')
   useEffect(() => {
     if (!initialized) return
-    let timer = 0
-    const fit = () => {
-      timer = 0
-      fitView({ padding: 0.16, maxZoom: 1, duration: 380 })
-    }
-    timer = window.setTimeout(fit, 30)
-
-    // One pan per change, aimed at the frame the map settles into. Opening or
-    // closing the pane runs the drawer's fold, which changes how much canvas
-    // there is to frame into, so a fit that ran while the fold was still going
-    // would aim at a viewport that no longer exists. This used to be answered
-    // by fitting a second time afterwards, but the second fit interrupted the
-    // first one mid-flight: the camera aimed twice, and two aims read as one
-    // elastic pan that overshoots and comes back. So the pending fit waits out
-    // the resize instead. A resize with no fit pending is a reader dragging the
-    // pane or the window, and is none of this effect's business.
-    const observer = new ResizeObserver(() => {
-      if (!timer) return
-      clearTimeout(timer)
-      timer = window.setTimeout(fit, 60)
-    })
-    const canvas = store.getState().domNode
-    if (canvas) observer.observe(canvas)
-
-    return () => {
-      clearTimeout(timer)
-      observer.disconnect()
-    }
+    // One fit, once, straight away: the camera sweeps from wherever it is to the
+    // new frame in a single motion. It used to fit twice, the second one landing
+    // mid-pan, which is what made the sweep read as elastic.
+    const timer = setTimeout(() => fitView({ padding: 0.16, maxZoom: 1, duration: 380 }), 30)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized, roster, layoutNonce, egoOn, paneOpen])
 

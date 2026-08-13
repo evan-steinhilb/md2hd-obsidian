@@ -4,7 +4,7 @@
  * shadow root, then the plugin itself. Everything resolves inside this repo.
  */
 import { build } from 'esbuild'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -26,6 +26,11 @@ const sheet = css.outputFiles[0].text
 
 mkdirSync(join(here, '.gen'), { recursive: true })
 writeFileSync(join(here, '.gen', 'css.js'), `export default ${JSON.stringify(sheet)}\n`)
+
+// The agent skill, embedded the same way — Obsidian only ever installs
+// main.js, so anything the plugin carries has to ride inside it.
+const skill = readFileSync(join(here, 'src', 'skill.md'), 'utf8')
+writeFileSync(join(here, '.gen', 'skill.js'), `export default ${JSON.stringify(skill)}\n`)
 
 // 2. The plugin. `obsidian` stays external — the app provides it at runtime.
 await build({

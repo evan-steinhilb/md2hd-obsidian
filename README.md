@@ -71,6 +71,16 @@ degrade to prose instead of errors. Full syntax:
 [md2hd.com/reference](https://md2hd.com/reference) ·
 [guides](https://md2hd.com/guides)
 
+## The agent skill
+
+Writing a map by hand is easy; having a coding agent write one that compiles
+to the graph you meant is what the bundled skill is for. Run **md2hd: Install
+the map-writing skill for coding agents** and the plugin writes
+`writing-md2hd-maps` into your vault at `.agents/skills/` and
+`.claude/skills/` — the two places agents look, whichever one you run. Open
+the vault folder in your agent and "turn these notes into an md2hd map"
+produces markdown that opens as the map you asked for.
+
 ## Install
 
 Until the plugin lands in the community directory:

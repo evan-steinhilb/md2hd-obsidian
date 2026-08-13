@@ -10,5 +10,6 @@ assert(!css.includes(':root'), ':root survived the rehoming — the tokens would
 assert(css.includes(':host'), 'no :host in the sheet')
 assert(js.includes('require("obsidian")'), 'obsidian was bundled instead of left external')
 assert(js.includes('md2hd-map'), 'the view type is missing from the bundle')
+assert(js.includes('writing-md2hd-maps'), 'the agent skill is missing from the bundle')
 
 console.log('smoke ok')
