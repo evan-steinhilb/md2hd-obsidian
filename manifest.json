@@ -1,7 +1,7 @@
 {
   "id": "md-hd",
   "name": "md2hd",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "minAppVersion": "1.5.0",
   "description": "Open a note or folder as an md2hd map. Frontmatter becomes nodes, wikilinks become edges.",
   "author": "Evan Steinhilb",
