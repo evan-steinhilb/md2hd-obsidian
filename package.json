@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "node build.mjs",
-    "test": "node build.mjs && node smoke.mjs",
+    "test": "node --test scripts/*.test.mjs && node build.mjs && node smoke.mjs",
     "sync": "node scripts/sync.mjs"
   },
   "dependencies": {

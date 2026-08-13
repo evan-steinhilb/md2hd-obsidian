@@ -105,6 +105,20 @@ The repo is standalone — `src/` carries the map renderer, synced out of the
 md2hd monorepo by maintainers (`npm run sync`, which needs the monorepo
 checkout around it).
 
+## Release
+
+Releases are built from version tags by GitHub Actions. Update the same stable
+version in `package.json`, `manifest.json`, and `versions.json`, run `npm test`,
+commit the regenerated `main.js`, then push the exact version tag (for example,
+`0.2.4`, without a `v` prefix). The workflow rebuilds the committed bundle,
+attests `main.js`, and publishes `main.js` with `manifest.json`.
+
+After downloading an asset, its provenance can be checked with:
+
+```sh
+gh attestation verify main.js --repo evan-steinhilb/md2hd-obsidian
+```
+
 ## License
 
 [MIT](LICENSE)
