@@ -716,9 +716,13 @@ function Canvas({
         }
         const hidden = hiddenNode(n.id)
         const sel = n.id === selected
-        return n.className === cls && n.hidden === hidden && n.selected === sel
+        const zIndex = n.id === focused ? 6 : 0
+        return n.className === cls &&
+          n.hidden === hidden &&
+          n.selected === sel &&
+          n.zIndex === zIndex
           ? n
-          : { ...n, className: cls, hidden, selected: sel }
+          : { ...n, className: cls, hidden, selected: sel, zIndex }
       }),
     )
 
@@ -805,6 +809,7 @@ function Canvas({
         proOptions={{ hideAttribution: true }}
         nodesConnectable={false}
         elementsSelectable={false}
+        elevateNodesOnSelect={false}
         panOnScroll
         zoomOnDoubleClick={false}
       >

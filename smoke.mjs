@@ -16,6 +16,11 @@ assert(js.includes('require("obsidian")'), 'obsidian was bundled instead of left
 assert(js.includes('md2hd-map'), 'the view type is missing from the bundle')
 assert(js.includes('writing-md2hd-maps'), 'the agent skill is missing from the bundle')
 
+const themeSource = readFileSync(new URL('./src/theme.css', import.meta.url), 'utf8')
+for (const feature of ['scrollbar-width', 'text-decoration-color', '!important']) {
+  assert(!themeSource.includes(feature), `src/theme.css still uses ${feature}`)
+}
+
 // platform: 'browser' (not 'node') — matches how build.mjs actually bundles the
 // plugin. Under 'node', esbuild resolves yaml's Node/CJS export, which calls
 // require('process') internally; that require has nothing to bind to once the

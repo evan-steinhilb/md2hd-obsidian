@@ -22,7 +22,7 @@ body,
   grid-template-columns: var(--rail) minmax(0, 1fr);
   height: 100%;
   /* The rail slides between its widths instead of teleporting. */
-  transition: grid-template-columns 0.2s var(--ease);
+  transition: grid-template-columns var(--motion-slow) var(--ease);
 }
 
 .shell[data-rail='collapsed'] {
@@ -87,7 +87,7 @@ body,
   flex: none;
   border-radius: 5px;
   color: var(--ink-faint);
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .rail-toggle:hover {
@@ -116,7 +116,7 @@ body,
   /* Labels clip rather than wrap while the rail is mid-slide. */
   white-space: nowrap;
   overflow: hidden;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .rail-btn:hover {
@@ -159,7 +159,7 @@ body,
   padding: 0 6px 0 9px;
   border-radius: 6px;
   color: var(--ink-mute);
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .rail-item:hover {
@@ -203,7 +203,7 @@ body,
   flex: none;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.14s var(--ease);
+  transition: opacity var(--motion-quick) var(--ease);
 }
 
 .rail-item:hover .rail-item-kill,
@@ -249,7 +249,7 @@ body,
   text-transform: uppercase;
   color: var(--ink-faint);
   text-align: left;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .rail-group-name:hover {
@@ -263,7 +263,7 @@ body,
 
 .rail-group-name svg {
   flex: none;
-  transition: transform 0.14s var(--ease);
+  transition: transform var(--motion-quick) var(--ease);
   transform: rotate(90deg);
 }
 
@@ -282,7 +282,7 @@ body,
 .rail-group-body {
   display: grid;
   grid-template-rows: 1fr;
-  transition: grid-template-rows 0.18s var(--ease);
+  transition: grid-template-rows var(--motion-section) var(--ease);
 }
 
 .rail-group-body > div {
@@ -300,7 +300,7 @@ body,
    and unfocusable once it has. */
 .rail-group[data-shut] .rail-group-body > div {
   visibility: hidden;
-  transition: visibility 0s 0.18s;
+  transition: visibility 0s var(--motion-section);
 }
 
 /* Somewhere a dragged map can land. The tint answers during the hover, which
@@ -330,7 +330,7 @@ body,
   color: var(--ink-mute);
   font-size: 12.5px;
   text-align: left;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .rail-folder-name:hover {
@@ -340,7 +340,7 @@ body,
 
 .rail-folder-name svg {
   flex: none;
-  transition: transform 0.14s var(--ease);
+  transition: transform var(--motion-quick) var(--ease);
   transform: rotate(90deg);
 }
 
@@ -375,7 +375,7 @@ body,
   cursor: pointer;
   list-style: none;
   opacity: 0;
-  transition: opacity 0.14s var(--ease);
+  transition: opacity var(--motion-quick) var(--ease);
 }
 
 .rail-menu summary::-webkit-details-marker {
@@ -422,7 +422,7 @@ body,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .rail-menu-panel button:hover,
@@ -516,7 +516,7 @@ body,
   font-size: 12px;
   color: var(--ink-faint);
   text-decoration: none;
-  transition: color 0.14s var(--ease);
+  transition: color var(--motion-quick) var(--ease);
 }
 
 .rail-link:hover {
@@ -584,7 +584,7 @@ body,
   text-transform: uppercase;
   color: var(--accent-bright);
   pointer-events: none;
-  animation: fade-in 0.16s var(--ease);
+  animation: fade-in var(--motion-standard) var(--ease);
 }
 
 .react-flow__attribution {
@@ -593,14 +593,6 @@ body,
 
 .react-flow__node {
   cursor: default;
-}
-
-/* Cards sit above the links — a card is content, a line is wiring — and the
-   card you are reading lifts further still, clear of any neighbour it
-   happens to overlap. */
-.react-flow__node:hover,
-.react-flow__node.selected {
-  z-index: 6 !important;
 }
 
 /* Ports exist only so edges can pick a face; they are never dragged. */
@@ -627,7 +619,7 @@ body,
   background: var(--surface);
   border-bottom: 1px solid var(--line-soft);
   fill: var(--ink-mute);
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .react-flow__controls-button:hover {
@@ -671,7 +663,7 @@ body,
   border-radius: 6px;
   background: var(--surface-2);
   border: 1px solid transparent;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .search:hover {
@@ -688,7 +680,7 @@ body,
   border: 0;
   outline: 0;
   font-size: 13px;
-  transition: width 0.2s var(--ease);
+  transition: width var(--motion-slow) var(--ease);
 }
 
 /* The field leans in when typing starts. */
@@ -723,7 +715,6 @@ body,
   flex: 1;
   min-width: 0;
   overflow-x: auto;
-  scrollbar-width: none;
 }
 
 .filters::-webkit-scrollbar {
@@ -786,7 +777,7 @@ body,
   flex: none;
   border-radius: 6px;
   color: var(--ink-mute);
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .icon-btn:hover {
@@ -838,7 +829,6 @@ body,
   /* The frame's own step, mirroring the rail: the pane lifts off it. */
   background: var(--grain), var(--surface-dim);
   overflow-x: auto;
-  scrollbar-width: none;
 }
 
 .drawer::-webkit-scrollbar {
@@ -861,7 +851,7 @@ body,
   text-transform: uppercase;
   color: var(--ink-mute);
   white-space: nowrap;
-  transition: color 0.14s var(--ease);
+  transition: color var(--motion-quick) var(--ease);
 }
 
 .drawer-tab:hover {
@@ -899,7 +889,6 @@ body,
 .drawer-tab[data-off] {
   opacity: 0.48;
   text-decoration: line-through;
-  text-decoration-color: var(--line-lift);
 }
 
 /* The drawer's own controls hold the right edge the way Overview holds the
@@ -917,7 +906,7 @@ body,
   background: var(--grain), var(--surface-dim);
   border-left: 1px solid var(--line-soft);
   /* Arrives with the pane rather than popping into the band. */
-  animation: fade-in 0.18s var(--ease);
+  animation: fade-in var(--motion-section) var(--ease);
 }
 
 /* The strip's expanded state. One fold carries the whole motion — the grid row
@@ -927,7 +916,7 @@ body,
   display: grid;
   flex: none;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.24s var(--ease);
+  transition: grid-template-rows var(--motion-pane) var(--ease);
 }
 
 .drawer-fold[data-open] {
@@ -956,10 +945,10 @@ body,
   background: var(--surface-2);
   box-shadow: var(--w-glow);
   transition:
-    border-color 0.16s var(--ease),
-    box-shadow 0.16s var(--ease),
-    background 0.16s var(--ease),
-    opacity 0.2s var(--ease);
+    border-color var(--motion-standard) var(--ease),
+    box-shadow var(--motion-standard) var(--ease),
+    background var(--motion-standard) var(--ease),
+    opacity var(--motion-slow) var(--ease);
 }
 
 .card.w5 {
@@ -1119,7 +1108,7 @@ body,
   stroke: color-mix(in srgb, var(--bg) 78%, transparent);
   stroke-width: 3.5;
   stroke-linecap: round;
-  transition: opacity 0.2s var(--ease);
+  transition: opacity var(--motion-slow) var(--ease);
 }
 
 .react-flow__edge.tr-far .edge-casing,
@@ -1134,8 +1123,8 @@ body,
   stroke: color-mix(in srgb, var(--from, var(--edge)) 32%, var(--edge));
   stroke-width: 1.25;
   transition:
-    stroke 0.18s var(--ease),
-    opacity 0.2s var(--ease);
+    stroke var(--motion-section) var(--ease),
+    opacity var(--motion-slow) var(--ease);
 }
 
 /* A live link takes the colour of the node it leaves — the same colour its
@@ -1174,7 +1163,7 @@ body,
   text-transform: uppercase;
   color: var(--ink-faint);
   pointer-events: none;
-  transition: 0.18s var(--ease);
+  transition: var(--motion-section) var(--ease);
   white-space: nowrap;
 }
 
@@ -1190,7 +1179,7 @@ body,
 .edge-chevron {
   position: absolute;
   pointer-events: none;
-  transition: opacity 0.18s var(--ease);
+  transition: opacity var(--motion-section) var(--ease);
 }
 
 .edge-chevron circle {
@@ -1304,7 +1293,7 @@ body,
   border-radius: 2px;
   background: var(--line-lift);
   opacity: 0;
-  transition: opacity 0.14s var(--ease);
+  transition: opacity var(--motion-quick) var(--ease);
 }
 
 .pane-grip:hover::after,
@@ -1337,7 +1326,7 @@ body,
 }
 
 .pane-fold-btn svg {
-  transition: transform 0.16s var(--ease);
+  transition: transform var(--motion-standard) var(--ease);
 }
 
 .pane-fold-btn[aria-expanded='true'] svg {
@@ -1491,7 +1480,6 @@ body,
   overflow-y: auto;
   overscroll-behavior: none;
   padding: 10px 20px 24px;
-  scrollbar-width: thin;
 }
 
 .pane-scroll::-webkit-scrollbar {
@@ -1584,7 +1572,7 @@ body,
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--ink-mute);
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 /* The X puts the direction away rather than selecting a fourth ring, so it
@@ -1690,7 +1678,7 @@ body,
   font-size: 12.5px;
   font-weight: 550;
   color: var(--ink-mute);
-  transition: color 0.14s var(--ease);
+  transition: color var(--motion-quick) var(--ease);
 }
 
 .fold > summary::-webkit-details-marker {
@@ -1708,7 +1696,7 @@ body,
   border-left: 4px solid currentColor;
   border-top: 3.5px solid transparent;
   border-bottom: 3.5px solid transparent;
-  transition: transform 0.16s var(--ease);
+  transition: transform var(--motion-standard) var(--ease);
 }
 
 .fold[open] > summary {
@@ -1787,8 +1775,8 @@ body,
 
 .prose a {
   color: var(--accent-bright);
-  text-decoration-color: color-mix(in srgb, var(--accent-bright) 40%, transparent);
-  text-underline-offset: 2px;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-bright) 40%, transparent);
 }
 
 .prose code {
@@ -1876,7 +1864,7 @@ body,
   border-radius: 6px;
   border: 1px solid transparent;
   text-align: left;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .rel-item:hover {
@@ -1970,7 +1958,7 @@ body,
   background: var(--surface-2);
   font-size: 13px;
   color: var(--ink-mute);
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .btn:hover {
@@ -2003,7 +1991,7 @@ body,
   padding: 40px 20px;
   background: color-mix(in srgb, var(--bg) 72%, transparent);
   backdrop-filter: blur(3px);
-  animation: fade-in 0.18s var(--ease);
+  animation: fade-in var(--motion-section) var(--ease);
 }
 
 .sheet {
@@ -2017,7 +2005,7 @@ body,
   box-shadow: var(--shadow-2);
   overflow: hidden;
   /* Rises into place under the scrim's fade; closing stays immediate. */
-  animation: sheet-in 0.22s var(--ease);
+  animation: sheet-in var(--motion-sheet) var(--ease);
 }
 
 .sheet-head .brand-mark {
@@ -2074,7 +2062,7 @@ body,
   background: var(--n-0);
   color: var(--ink-faint);
   text-align: center;
-  transition: 0.16s var(--ease);
+  transition: var(--motion-standard) var(--ease);
 }
 
 .drop.is-over {
@@ -2100,13 +2088,12 @@ body,
 .link {
   padding: 0;
   color: var(--accent-bright);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent-bright) 40%, transparent);
-  text-underline-offset: 3px;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-bright) 40%, transparent);
 }
 
 .link:hover {
-  text-decoration-color: var(--accent-bright);
+  border-bottom-color: var(--accent-bright);
 }
 
 .import-label {
@@ -2183,7 +2170,7 @@ body,
   border-radius: 4px;
   color: var(--ink-faint);
   flex: none;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .queue-kill:hover {
@@ -2387,7 +2374,7 @@ body,
   background: var(--n-0);
   text-align: left;
   color: var(--ink-soft);
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .share-next:hover {
@@ -2521,11 +2508,11 @@ body,
 
 .share-revoke {
   color: var(--danger);
-  text-decoration-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 .share-revoke:hover {
-  text-decoration-color: var(--danger);
+  border-bottom-color: var(--danger);
 }
 
 /* Bars --------------------------------------------------------------------- */
@@ -2610,7 +2597,6 @@ body,
 
 .chip[data-off] {
   text-decoration: line-through;
-  text-decoration-color: var(--line-lift);
 }
 
 /* Itemised children -------------------------------------------------------- */
@@ -2663,7 +2649,7 @@ body,
   font-weight: 550;
   color: var(--ink-mute);
   white-space: nowrap;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 .filters-home:hover {
@@ -2688,15 +2674,6 @@ body,
   from {
     opacity: 0;
     transform: translateY(10px) scale(0.985);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
   }
 }
 

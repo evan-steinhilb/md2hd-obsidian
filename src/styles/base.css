@@ -72,6 +72,12 @@
   --rail: 244px;
   --r: 7px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --motion-quick: 0.14s;
+  --motion-standard: 0.16s;
+  --motion-section: 0.18s;
+  --motion-slow: 0.2s;
+  --motion-sheet: 0.22s;
+  --motion-pane: 0.24s;
 
   color-scheme: dark;
 }
@@ -163,7 +169,7 @@ button {
   letter-spacing: -0.006em;
   text-decoration: none;
   white-space: nowrap;
-  transition: 0.16s var(--ease);
+  transition: var(--motion-standard) var(--ease);
 }
 
 .btn:hover {
@@ -225,7 +231,7 @@ button {
   letter-spacing: 0.03em;
   color: var(--ink-mute);
   white-space: nowrap;
-  transition: 0.14s var(--ease);
+  transition: var(--motion-quick) var(--ease);
 }
 
 button.chip:hover {
@@ -244,4 +250,15 @@ button.chip[aria-pressed='true'] {
   height: 6px;
   border-radius: 2px;
   flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-quick: 0.01ms;
+    --motion-standard: 0.01ms;
+    --motion-section: 0.01ms;
+    --motion-slow: 0.01ms;
+    --motion-sheet: 0.01ms;
+    --motion-pane: 0.01ms;
+  }
 }
