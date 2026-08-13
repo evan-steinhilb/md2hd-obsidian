@@ -137,7 +137,7 @@ export default class Md2hdPlugin extends Plugin {
 
     this.addCommand({
       id: 'install-agent-skill',
-      name: 'Install the map-writing skill for coding agents',
+      name: 'Install skill',
       callback: () => void this.installSkill(),
     })
   }
