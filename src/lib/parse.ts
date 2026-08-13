@@ -1,4 +1,4 @@
-import yaml from 'js-yaml'
+import { parse as parseYaml } from 'yaml'
 import { PALETTE, UNRESOLVED } from './palette'
 
 /**
@@ -136,7 +136,10 @@ export function splitDocs(text: string): RawDoc[] {
     while (i < lines.length && !(lines[i].trim() === '---' && opensFrontmatter(lines, i))) i++
     let fm: Record<string, unknown> = {}
     try {
-      const parsed = yaml.load(fmText)
+      const parsed = parseYaml(fmText, {
+        merge: true,
+        customTags: ['timestamp'],
+      })
       if (parsed && typeof parsed === 'object') fm = parsed as Record<string, unknown>
     } catch {
       /* malformed frontmatter: treat as an empty block, body still renders */
